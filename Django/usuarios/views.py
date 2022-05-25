@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
-from django.contrib import auth
+from django.contrib import auth, messages
 from receita.models import Receita
 
 
@@ -12,24 +12,28 @@ def cadastro(request):
         senha2 = request.POST['password2']
 
         if not nome.strip():
-            print('campo nome não pode ser em branco')
+            messages.error(request, 'Campo nome não pode ser em branco')
             return redirect('cadastro')
 
         if not email.strip():
-            print('campo email não pode ser em branco')
+            messages.error(request, 'Campo e-mail não pode ser em branco')
             return redirect('cadastro')
 
         if senha != senha2:
-            print('As senhas não correspondem')
+            messages.error(request, 'As senhas não correspondem')
             return redirect('cadastro')
 
         if User.objects.filter(email=email).exists():
-            print('usuário ja cadastrado')
+            messages.error(request, 'Email já cadastrado')
+            return redirect('cadastro')
+
+        if User.objects.filter(username=nome).exists():
+            messages.error(request, 'Nome de usuário já existe')
             return redirect('cadastro')
 
         user = User.objects.create_user(username=nome, email=email, password=senha)
         user.save()
-        print('usuário cadastrado com sucesso!')
+        messages.success(request, 'usuário cadastrado com sucesso!')
         return redirect('login')
     else:
         return render(request, 'usuarios/cadastro.html')
@@ -41,7 +45,7 @@ def login(request):
         senha = request.POST['senha']
 
         if email == '' or senha == '':
-            print('campo de email ou senha está vazio')
+            messages.error(request, 'Campo e-mail não pode ser vazio')
             return redirect('login')
 
         if User.objects.filter(email=email).exists():
@@ -49,7 +53,7 @@ def login(request):
             user = auth.authenticate(request, username=nome, password=senha)
             if user is not None:
                 auth.login(request, user)
-                print('login realizado com sucesso')
+                messages.success(request, 'Login realizado com sucesso!')
                 return redirect('dashboard')
     return render(request, 'usuarios/login.html')
 
